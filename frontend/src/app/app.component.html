@@ -1,0 +1,118 @@
+<div class="shell">
+  <header class="topbar">
+    <div class="brand">
+      <div>
+        <h1>Tic Tac Toe<span class="title-accent">.</span></h1>
+      </div>
+    </div>
+    <div class="live-tag"><span class="live-dot"></span> LOCAL SESSION</div>
+  </header>
+
+  <section class="welcome">
+    <p class="eyebrow">A CLASSIC. REIMAGINED.</p>
+    <h2>Make your move.</h2>
+    <p>Three in a row wins. Outsmart a friend or challenge the machine.</p>
+  </section>
+
+  <div class="workspace">
+    <section class="game-panel" aria-label="Game">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">01 / GAME MODE</p>
+          <h3>Choose your opponent</h3>
+        </div>
+      </div>
+      <div class="mode-picker" role="group" aria-label="Game mode">
+        <button type="button" [class.active]="selectedMode() === 'TwoPlayer'"
+          [attr.aria-pressed]="selectedMode() === 'TwoPlayer'" [disabled]="busy()"
+          (click)="selectMode('TwoPlayer')">Two players</button>
+        <button type="button" [class.active]="selectedMode() === 'Computer'"
+          [attr.aria-pressed]="selectedMode() === 'Computer'" [disabled]="busy()"
+          (click)="selectMode('Computer')">vs. Computer</button>
+      </div>
+
+      @if (game(); as current) {
+        <div class="match-header">
+          <p class="eyebrow">02 / MATCH IN PROGRESS</p>
+          <div class="status-line" aria-live="polite">
+            @if (current.status === 'Won') {
+              <span class="status-dot win-dot"></span>
+              <strong>{{ current.mode === 'Computer' && current.winner === 'O' ? 'Computer wins!' : 'Player ' + current.winner + ' wins!' }}</strong>
+            } @else if (current.status === 'Draw') {
+              <span class="status-dot draw-dot"></span><strong>It's a draw!</strong>
+            } @else {
+              <span class="status-dot"></span>
+              <strong>{{ current.mode === 'Computer' ? 'Your turn' : 'Player ' + current.currentPlayer + '\'s turn' }}</strong>
+              <span class="turn-indicator">{{ current.currentPlayer }}</span>
+            }
+          </div>
+          <p class="helper-text">
+            @if (current.status === 'InProgress') {
+              {{ current.mode === 'Computer' ? 'You play X. The computer plays O.' : 'Take turns placing X and O on the board.' }}
+            } @else { Select Reset Game to play another round. }
+          </p>
+        </div>
+
+        <div class="board" role="group" aria-label="Tic Tac Toe 3 by 3 board">
+          @for (cell of current.board; track $index) {
+            <button type="button" class="cell"
+              [class.cell-x]="cell === 'X'" [class.cell-o]="cell === 'O'"
+              [class.winning-cell]="current.winningCells.includes($index)"
+              [attr.aria-label]="cellLabel($index, cell)"
+              [disabled]="busy() || !!cell || current.status !== 'InProgress' || (current.mode === 'Computer' && current.currentPlayer === 'O')"
+              (click)="play($index)">
+              <span>{{ cell }}</span>
+            </button>
+          }
+        </div>
+
+        <div class="game-actions">
+          <button class="primary-action" type="button" [disabled]="busy()"
+            (click)="resetGame()"><span aria-hidden="true">↻</span> Reset game</button>
+          <button class="secondary-action" type="button" [disabled]="busy() || !current.canUndo"
+            (click)="undo()"><span aria-hidden="true">↶</span> Undo last move</button>
+        </div>
+        <p class="policy-note">Undo is disabled when a match is complete. Scores are final.</p>
+      } @else {
+        <div class="waiting">Connecting to the game server…</div>
+      }
+    </section>
+
+    <aside class="sidebar" aria-label="Match details">
+      <section class="score-panel">
+        <div class="section-title"><div><p class="eyebrow">03 / SCOREBOARD</p><h3>Session standings</h3></div><span class="mini-icon">★</span></div>
+        <div class="score-grid">
+          <div class="score-box x-score"><span class="score-label">PLAYER X</span><strong>{{ scoreboard().xWins }}</strong><span>WINS</span></div>
+          <div class="score-box o-score"><span class="score-label">PLAYER O</span><strong>{{ scoreboard().oWins }}</strong><span>WINS</span></div>
+          <div class="score-box draw-score"><span class="score-label">DRAWS</span><strong>{{ scoreboard().draws }}</strong><span>GAMES</span></div>
+        </div>
+        <button class="text-action" type="button" [disabled]="busy() || !game()" (click)="resetScoreboard()">Reset scoreboard <span aria-hidden="true">↗</span></button>
+      </section>
+
+      <section class="history-panel">
+        <div class="section-title"><div><p class="eyebrow">04 / THE PLAY-BY-PLAY</p><h3>Move history</h3></div>
+          <span class="counter">{{ game()?.moveHistory?.length ?? 0 }} / 9</span>
+        </div>
+        @if (game()?.moveHistory?.length) {
+          <div class="history-table-wrap">
+            <table><thead><tr><th>MOVE</th><th>PLAYER</th><th>POSITION</th></tr></thead>
+              <tbody>
+                @for (move of game()!.moveHistory; track move.number) {
+                  <tr><td class="move-number">{{ move.number.toString().padStart(2, '0') }}</td>
+                    <td><span class="player-pill" [class.o-pill]="move.player === 'O'">{{ move.player }}</span></td>
+                    <td>Row {{ move.row + 1 }}, Col {{ move.column + 1 }}</td></tr>
+                }
+              </tbody></table>
+          </div>
+        } @else {
+          <div class="empty-history"><span aria-hidden="true">◎</span><strong>No moves yet</strong><p>Your opening move will appear here.</p></div>
+        }
+      </section>
+      <div class="rules-note"><span aria-hidden="true">✦</span> First to align three marks horizontally, vertically, or diagonally wins.</div>
+    </aside>
+  </div>
+  @if (error(); as errorMessage) {
+    <div class="error-alert" role="alert">{{ errorMessage }}</div>
+  }
+  <footer>POWERED BY ANGULAR + .NET WEB API <span>·</span> GAME RULES RUN ON THE SERVER</footer>
+</div>
